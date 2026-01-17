@@ -1,0 +1,11 @@
+# Node modules
+todo_app/node_modules
+todo_backend/node_modules
+
+# Env files
+todo_app/.env
+todo_backend/.env
+
+# Build folders
+todo_app/.next
+todo_backend/dist
