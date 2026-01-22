@@ -1,43 +1,83 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import Task from "../models/Task";
+import { AuthRequest } from "../middleware/authMiddleware";
 
+// Define body type
+interface CreateTaskBody {
+  title: string;
+  dueDate?: string;  // dueDate is optional
+  completed?: boolean;
+}
+
+// CREATE TASK
 export const createTask = async (req: any, res: Response) => {
   try {
     const task = await Task.create({
-      ...req.body,
+      title: req.body.title,
+      completed: req.body.completed ?? false,
+
+      // 🔥 DO NOT convert to Date
+      dueDate: req.body.dueDate || "",
+
       user: req.user.id,
     });
+
     res.status(201).json(task);
-  } catch (error) {
+  } catch (err) {
     res.status(500).json({ message: "Failed to create task" });
   }
 };
 
-export const getTasks = async (req: any, res: Response) => {
+
+// GET TASKS
+export const getTasks = async (req: AuthRequest, res: Response) => {
   try {
-    const tasks = await Task.find({ user: req.user.id });
+    const tasks = await Task.find({ user: req.user!.id }).sort({ createdAt: -1 });
     res.json(tasks);
-  } catch (error) {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to fetch tasks" });
   }
 };
 
-export const updateTask = async (req: Request, res: Response) => {
+// UPDATE TASK
+export const updateTask = async (
+  req: AuthRequest & { body: Partial<CreateTaskBody> },
+  res: Response
+) => {
   try {
-    const task = await Task.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    const task = await Task.findOneAndUpdate(
+      { _id: req.params.id, user: req.user!.id },
+      req.body,
+      { new: true }
+    );
+
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
     res.json(task);
-  } catch (error) {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to update task" });
   }
 };
 
-export const deleteTask = async (req: Request, res: Response) => {
+// DELETE TASK
+export const deleteTask = async (req: AuthRequest, res: Response) => {
   try {
-    await Task.findByIdAndDelete(req.params.id);
+    const task = await Task.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user!.id,
+    });
+
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
     res.json({ message: "Task deleted" });
-  } catch (error) {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to delete task" });
   }
 };

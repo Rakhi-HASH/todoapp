@@ -1,203 +1,372 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
-import PriorityToggle from "@/components/PriorityToggle";
-export default function Settings() {
-    return (
-        <main className="min-h-screen bg-gray-100">
-            <div className="flex">
-                <Sidebar />
-                <div className="flex-1 p-6 ">
-                    {/* Header */}
-                    <div className="flex justify-between items-center mb-4">
-                        <div className="flex items-center gap-2">
-                            <span className="text-green-600 text-xl">✅</span>
-                            <h1 className="text-lg font-semibold">Completed Tasks</h1>
-                        </div>
-                        <div className="flex gap-2">
-                            <button
 
-                                className="flex items-center gap-1 text-white bg-green-600 px-3 py-1 rounded hover:bg-gray-300"
-                            >
-                                Save
-                            </button>
-                        </div>
-                    </div>
+interface UserState {
+  name: string;
+  email: string;
+  password?: string;
+}
 
+export default function settings() {
+  const router = useRouter();
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+  const [user, setUser] = useState<UserState>({
+    name: "",
+    email: "",
+    password: "",
+  });
 
-                        <div className="bg-white rounded-lg shadow-md p-6 max-w-lg ">
-                            {/* Title */}
-                            <h1 className="text-lg font-semibold mb-5">Account</h1>
+  const [newPassword, setNewPassword] = useState("");
 
-                            <div className="flex gap-6">
-                                {/* Left Profile Section */}
-                                <div className="flex flex-col items-center">
-                                    <img
-                                        src="data:image/jpeg;base64,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"
-                                        alt="Profile"
-                                        className="w-16 h-16 rounded-full bg-gray-100"
-                                    />
+  // 🔹 Load user
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-                                    <button className="text-green-500 text-sm font-medium mt-2">
-                                        Edit
-                                    </button>
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      setUser({
+        name: parsed.name || "",
+        email: parsed.email || "",
+      });
+    }
+  }, []);
 
-                                    <button className="mt-3 text-red-500 text-sm flex items-center gap-1">
-                                        🗑️ Delete Account
-                                    </button>
-                                </div>
+  // ✅ CHANGE ACCOUNT (SAVE)
+  const handleSave = () => {
+    if (!user.name || !user.email) {
+      return alert("Name and email are required");
+    }
 
-                                {/* Right Form Section */}
-                                <div className="flex-1 space-y-4">
-                                    {/* Name */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                                            Name
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="Sara Johnson"
-                                            className="w-full rounded border border-gray-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        />
-                                    </div>
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      return alert("User not found");
+    }
 
-                                    {/* Email */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                                            Email
-                                        </label>
-                                        <input
-                                            type="email"
-                                            placeholder="sara_johnson13@gmail.com"
-                                            className="w-full rounded border border-gray-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        />
-                                    </div>
+    const parsed = JSON.parse(storedUser);
 
-                                    {/* Password */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                                            Password
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                type="password"
-                                                placeholder="sara123"
-                                                className="w-full rounded border border-gray-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                            />
-                                            <button
-                                                type="button"
-                                                className="absolute right-3 top-2.5 text-gray-400 text-sm"
-                                            >
-                                                👁️
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+    const updatedUser = {
+      ...parsed,
+      name: user.name,
+      email: user.email,
+      ...(newPassword && { password: newPassword }),
+    };
 
-                        <div className="bg-white rounded-lg shadow p-6 space-y-4">
-                            <h1 className="text-lg font-semibold">Task Preference</h1>
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    setNewPassword("");
 
-                            {/* Default Priority */}
-                            <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
-                                <span>Default Priority</span>
-                                <select className="bg-gray-100 focus:outline-none">
-                                    <option>low-high</option>
-                                    <option>high-low</option>
-                                </select>
-                            </div>
+    alert("✅ Account updated successfully");
+  };
 
-                            {/* Week starts on */}
-                            <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
-                                <span>Week starts on</span>
-                                <select className="bg-gray-100 focus:outline-none">
-                                    <option>monday</option>
-                                    <option>sunday</option>
-                                </select>
-                            </div>
+  // 🗑️ DELETE ACCOUNT
+  const handleDeleteAccount = () => {
+    const confirmDelete = confirm(
+      "Are you sure you want to delete your account? This action cannot be undone."
+    );
 
-                            {/* Default Due Time */}
-                            <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
-                                <span>Default Due Time</span>
-                                <select className="bg-gray-100 focus:outline-none">
-                                    <option>none</option>
-                                    <option>morning</option>
-                                    <option>evening</option>
-                                </select>
-                            </div>
-                        </div>
+    if (!confirmDelete) return;
 
+    // Clear everything
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("tasks");
 
-                        <div className="bg-white rounded-lg shadow p-6 space-y-4">
-                            <h1 className="text-lg font-semibold">Task Preference</h1>
+    alert("❌ Account deleted");
 
-                            {/* Default Priority */}
-                            <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
-                                <span>Reminder</span>
-                                <PriorityToggle />
-                                {/* // value="low"
-                                    // onChange={(value) => console.log("Priority:", value)}
-                                 */}
-                            </div>
+    // Redirect to login
+    router.push("/login");
+  };
 
-                            {/* Week starts on */}
-                            <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
-                                <span>Reminder Timing</span>
-                                <select className="bg-gray-100 focus:outline-none">
-                                    <option>1 hr</option>
-                                    <option>30 min</option>
-                                    <option>15 min</option>
-                                    <option>5 min</option>
-                                </select>
-                            </div>
+  return (
+    <main className="h-screen w-screen bg-gray-100 dark:bg-gray-900 overflow-hidden">
+      {/* Navbar */}
+      <Navbar />
 
-                            {/* Default Due Time */}
-                            <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
-                                <span>Email Notifications</span>
-                                <PriorityToggle />
-                            </div>
-                        </div>
+      {/* Below Navbar */}
+      <div className="flex h-[calc(100vh-64px)] w-full">
+        {/* Sidebar */}
+        <Sidebar />
 
-                        <div className="bg-white rounded-lg shadow p-6 space-y-4">
-                            <h1 className="text-lg font-semibold">Appearance</h1>
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto p-8 flex justify-center items-start">
+          {/* Profile Card */}
+          <div className="w-full max-w-3xl bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-8">
+              <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">
+                👤 Profile Settings
+              </h1>
 
-                            {/* Default Priority */}
-                            <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
-                                <span>Theme</span>
-                                <select className="bg-gray-100 focus:outline-none">
-                                    <option>light</option>
-                                    <option>dark</option>
-                                </select>
-                            </div>
+              <button
+                onClick={handleSave}
+                className="bg-green-600 text-white px-5 py-2 rounded-lg 
+             hover:bg-green-700 transform hover:scale-105 
+             transition duration-300 ease-in-out shadow-sm hover:shadow-md"
+              >
+                Save Changes
+              </button>
 
-                            {/* Week starts on */}
-                            <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
-                                <span>Font Size</span>
-                                <select className="bg-gray-100 focus:outline-none">
-                                    <option>small</option>
-                                    <option>medium</option>
-                                    <option>Large</option>
-                                </select>
-                            </div>
-
-                            {/* Default Due Time */}
-                            <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
-                                <span>Language</span>
-                                <select className="bg-gray-100 focus:outline-none">
-                                    <option>English</option>
-                                    <option>Hindi</option>
-
-                                </select>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
             </div>
 
+            {/* Profile Section */}
+            <div className="flex flex-col items-center mb-10">
+              <div className="w-28 h-28 rounded-full bg-green-500 flex items-center justify-center text-white text-3xl font-bold">
+                {user.name ? user.name[0].toUpperCase() : "U"}
+              </div>
 
-        </main>
-    );
+              {/* <button className="mt-3 text-sm text-green-600 hover:underline">
+                Change Photo (coming soon)
+              </button> */}
+
+              <button
+                onClick={handleDeleteAccount}
+                className="mt-2 text-sm text-red-500 hover:underline"
+              >
+                Delete Account
+              </button>
+            </div>
+
+            {/* Form */}
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Full Name
+                </label>
+                <input
+                  className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500
+                             bg-white dark:bg-gray-700 dark:text-white"
+                  value={user.name}
+                  onChange={(e) =>
+                    setUser({ ...user, name: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Email Address
+                </label>
+                <input
+                  className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500
+                             bg-white dark:bg-gray-700 dark:text-white"
+                  value={user.email}
+                  onChange={(e) =>
+                    setUser({ ...user, email: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="Leave empty to keep old password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500
+                             bg-white dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }
+
+
+
+
+//   return (
+//     <main className="min-h-screen bg-gray-100">
+//       <div className="flex">
+//         <Sidebar />
+
+//         <div className="flex-1 p-6">
+//           {/* Header */}
+//           <div className="flex justify-between items-center mb-4">
+//             <div className="flex items-center gap-2">
+//               <span className="text-green-600 text-xl">⚙️</span>
+//               <h1 className="text-lg font-semibold">Settings</h1>
+//             </div>
+
+//             <button
+//               onClick={handleSave}
+//               className="flex items-center gap-1 text-white bg-green-600 px-3 py-1 rounded hover:bg-green-700"
+//             >
+//               Save
+//             </button>
+//           </div>
+
+//           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2 ">
+//             {/* Account */}
+//             <div className="bg-white rounded-lg shadow-md p-6 max-w-full ">
+//               <h1 className="text-lg font-semibold mb-5">Account</h1>
+
+//               <div className="flex gap-6">
+//                 {/* Profile */}
+//                 <div className="flex flex-col items-center">
+//                   <img
+//                     src="data:image/jpeg;base64,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"
+//                     alt="Profile"
+//                     className="w-16 h-16 rounded-full bg-gray-100"
+//                   />
+
+//                   <button className="text-green-500 text-sm font-medium mt-2">
+//                     Edit
+//                   </button>
+
+//                   <button className="mt-3 text-red-500 text-sm flex items-center gap-1">
+//                     🗑️ Delete Account
+//                   </button>
+//                 </div>
+
+//                 {/* Form */}
+//                 <div className="flex-1 space-y-4">
+//                   {/* Name */}
+//                   <div>
+//                     <label className="block text-xs font-medium text-gray-600 mb-1">
+//                       Name
+//                     </label>
+//                     <input
+//                       type="text"
+//                       value={user.name}
+//                       onChange={(e) =>
+//                         setUser({ ...user, name: e.target.value })
+//                       }
+//                       className="w-full rounded border border-gray-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+//                     />
+//                   </div>
+
+//                   {/* Email */}
+//                   <div>
+//                     <label className="block text-xs font-medium text-gray-600 mb-1">
+//                       Email
+//                     </label>
+//                     <input
+//                       type="email"
+//                       value={user.email}
+//                       onChange={(e) =>
+//                         setUser({ ...user, email: e.target.value })
+//                       }
+//                       className="w-full rounded border border-gray-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+//                     />
+//                   </div>
+
+//                   {/* Password */}
+//                   <div>
+//                     <label className="block text-xs font-medium text-gray-600 mb-1">
+//                       Password
+//                     </label>
+//                     <input
+//                       type="password"
+//                       value={user.password}
+//                       onChange={(e) =>
+//                         setUser({ ...user, password: e.target.value })
+//                       }
+//                       placeholder="Enter new password"
+//                       className="w-full rounded border border-gray-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+//                     />
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* Task Preference */}
+//             <div className="bg-white rounded-lg shadow p-6 space-y-4">
+//               <h1 className="text-lg font-semibold">Task Preference</h1>
+
+//               <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
+//                 <span>Default Priority</span>
+//                 <select className="bg-gray-100 focus:outline-none">
+//                   <option>low-high</option>
+//                   <option>high-low</option>
+//                 </select>
+//               </div>
+
+//               <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
+//                 <span>Week starts on</span>
+//                 <select className="bg-gray-100 focus:outline-none">
+//                   <option>monday</option>
+//                   <option>sunday</option>
+//                 </select>
+//               </div>
+
+//               <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
+//                 <span>Default Due Time</span>
+//                 <select className="bg-gray-100 focus:outline-none">
+//                   <option>none</option>
+//                   <option>morning</option>
+//                   <option>evening</option>
+//                 </select>
+//               </div>
+//             </div>
+
+//             {/* Notifications */}
+//             <div className="bg-white rounded-lg shadow p-6 space-y-4">
+//               <h1 className="text-lg font-semibold">Notifications</h1>
+
+//               <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
+//                 <span>Reminder</span>
+//                 <PriorityToggle />
+//               </div>
+
+//               <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
+//                 <span>Reminder Timing</span>
+//                 <select className="bg-gray-100 focus:outline-none">
+//                   <option>1 hr</option>
+//                   <option>30 min</option>
+//                   <option>15 min</option>
+//                   <option>5 min</option>
+//                 </select>
+//               </div>
+
+//               <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
+//                 <span>Email Notifications</span>
+//                 <PriorityToggle />
+//               </div>
+//             </div>
+
+//             {/* Appearance */}
+//             <div className="bg-white rounded-lg shadow p-6 space-y-4">
+//               <h1 className="text-lg font-semibold">Appearance</h1>
+
+//               <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
+//                 <span>Theme</span>
+//                 <select className="bg-gray-100 focus:outline-none">
+//                   <option>light</option>
+//                   <option>dark</option>
+//                 </select>
+//               </div>
+
+//               <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
+//                 <span>Font Size</span>
+//                 <select className="bg-gray-100 focus:outline-none">
+//                   <option>small</option>
+//                   <option>medium</option>
+//                   <option>large</option>
+//                 </select>
+//               </div>
+
+//               <div className="flex justify-between items-center bg-gray-100 rounded-lg px-4 py-2">
+//                 <span>Language</span>
+//                 <select className="bg-gray-100 focus:outline-none">
+//                   <option>English</option>
+//                   <option>Hindi</option>
+//                 </select>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </main>
+//   );
+// }
+

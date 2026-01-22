@@ -8,7 +8,7 @@ export default function AboutPage() {
       <Navbar />
 
       {/* Main Card */}
-      <div className="max-w-6xl mx-auto mt-8 bg-white rounded-2xl shadow p-6">
+      <div className="max-w-6xl mt-8 bg-white rounded-2xl shadow p-6">
         {/* Header */}
         <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
           👋 About Todo
@@ -65,7 +65,7 @@ export default function AboutPage() {
         </div>
 
         {/* Footer */}
-        <div className="text-center text-xs text-gray-400 mt-10">
+        <div className="mt-6 text-center text-xs text-gray-400 mt-10">
           Contact : support@gmail.com <br />
           © 2025 Todo App. All rights reserved
         </div>
