@@ -6,7 +6,7 @@ export default function Hero() {
       className="
         relative overflow-hidden
         bg-gradient-to-r from-blue-500 via-cyan-400 to-green-300
-        rounded-2xl p-10 text-white mb-6
+        rounded-2xl p-20 text-white mb-6
         transition-all duration-500 ease-out
         hover:scale-[1.02] hover:shadow-xl
         group

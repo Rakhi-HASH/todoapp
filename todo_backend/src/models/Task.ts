@@ -5,7 +5,7 @@ const TaskSchema = new mongoose.Schema(
     title: { type: String, required: true },
     completed: { type: Boolean, default: false },
 
-    // 🔥 THIS LINE WAS MISSING / WRONG
+    
     dueDate: { type: String, default: "" },
 
     user: {

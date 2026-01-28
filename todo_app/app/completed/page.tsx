@@ -15,11 +15,13 @@ interface Task {
 type FilterType = "All" | "Today" | "This Week" | "This Month";
 
 export default function Completed() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<FilterType>("All");
 
-  // ================= FETCH =================
+  // fetch
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) api.setAuthToken(token);
@@ -38,43 +40,44 @@ export default function Completed() {
     }
   };
 
-  // ================= DELETE =================
+  //Delete
   const clearAll = async () => {
     if (!confirm("Delete all completed tasks?")) return;
     try {
-      const completed = tasks.filter(t => t.completed);
+      const completed = tasks.filter((t) => t.completed);
       for (const t of completed) await api.deleteTask(t._id);
-      setTasks(tasks.filter(t => !t.completed));
+      setTasks(tasks.filter((t) => !t.completed));
     } catch {
       alert("Failed to clear tasks");
     }
   };
 
-  // ================= FILTER =================
+  // Filter
   const completedTasks = useMemo(
-    () => tasks.filter(t => t.completed),
-    [tasks]
+    () => tasks.filter((t) => t.completed),
+    [tasks],
   );
 
   const filteredTasks = useMemo(() => {
     const now = new Date();
-    return completedTasks.filter(task => {
+    return completedTasks.filter((task) => {
       if (!task.dueDate) return true;
       const d = new Date(task.dueDate);
-      const diff =
-        (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
+      const diff = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
 
       if (filter === "Today") return diff >= 0 && diff < 1;
       if (filter === "This Week") return diff >= 0 && diff < 7;
       if (filter === "This Month")
-        return d.getMonth() === now.getMonth() &&
-          d.getFullYear() === now.getFullYear();
+        return (
+          d.getMonth() === now.getMonth() &&
+          d.getFullYear() === now.getFullYear()
+        );
 
       return true;
     });
   }, [completedTasks, filter]);
 
-  // ================= GROUP =================
+  // Group
   const grouped = useMemo(() => {
     const g: Record<string, Task[]> = {
       Today: [],
@@ -85,7 +88,7 @@ export default function Completed() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    filteredTasks.forEach(task => {
+    filteredTasks.forEach((task) => {
       if (!task.dueDate) return g.Earlier.push(task);
 
       const d = new Date(task.dueDate);
@@ -100,10 +103,10 @@ export default function Completed() {
     return g;
   }, [filteredTasks]);
 
-  // ================= BEST DAY =================
+  //Best day
   const bestDay = useMemo(() => {
     const map: Record<string, number> = {};
-    completedTasks.forEach(t => {
+    completedTasks.forEach((t) => {
       if (!t.dueDate) return;
       const day = new Date(t.dueDate).toLocaleDateString("en-US", {
         weekday: "long",
@@ -114,14 +117,14 @@ export default function Completed() {
     return best ? `${best[0]} (${best[1]} tasks)` : "—";
   }, [completedTasks]);
 
-  // ================= STREAK =================
+  // Streak
   const currentStreak = useMemo(() => {
     const dates = completedTasks
-      .map(t => t.dueDate && new Date(t.dueDate).toDateString())
+      .map((t) => t.dueDate && new Date(t.dueDate).toDateString())
       .filter(Boolean) as string[];
 
     const unique = [...new Set(dates)]
-      .map(d => new Date(d))
+      .map((d) => new Date(d))
       .sort((a, b) => b.getTime() - a.getTime());
 
     let streak = 0;
@@ -136,23 +139,35 @@ export default function Completed() {
     return streak;
   }, [completedTasks]);
 
-  // ================= ACHIEVEMENTS =================
+  // ACHIEVEMENTS
   const achievements = {
     first: completedTasks.length >= 1,
     streak7: currentStreak >= 7,
     done25: completedTasks.length >= 25,
     done100: completedTasks.length >= 100,
-    streak50:currentStreak >=50
+    streak50: currentStreak >= 50,
   };
 
-  // ================= UI =================
+  //ui
   return (
-    <main className="min-h-screen bg-gray-100">
-      <Navbar />
-      <div className="flex">
-        <Sidebar />
+    <main className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Navbar with toggle */}
+      <Navbar onSidebarToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <div className="flex-1 p-6">
+      <div className="flex flex-1">
+        {/* Sidebar */}
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/40 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Main content */}
+        <div className="flex-1 p-4 sm:p-6 ">
           <div className="bg-white rounded-lg shadow p-6">
             {/* HEADER */}
             <div className="flex justify-between items-center mb-4">
@@ -163,10 +178,10 @@ export default function Completed() {
                 onClick={clearAll}
                 className="
     group flex items-center gap-1
-    bg-red-400 text-gray-700
+    bg-red-500 text-white
     px-3 py-1 rounded-md
     transition-all duration-300 ease-out
-    hover:bg-red-500 hover:text-white
+    hover:bg-red-600 hover:text-white
     hover:shadow-md hover:scale-105
     active:scale-95
   "
@@ -180,7 +195,6 @@ export default function Completed() {
                 />
                 Clear All
               </button>
-
             </div>
 
             <p className="text-gray-500 mb-4">
@@ -196,27 +210,27 @@ export default function Completed() {
                   className={`px-3 py-1 rounded-md text-sm font-medium
         transition-all duration-300 ease-out
         hover:scale-105 active:scale-95
-        ${filter === f
-                      ? "bg-blue-500 text-white shadow-md -translate-y-0.5"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    }`}
+        ${
+          filter === f
+            ? "bg-blue-500 text-white shadow-md -translate-y-0.5"
+            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+        }`}
                 >
                   {f}
                 </button>
               ))}
             </div>
 
-
             <div className="grid md:grid-cols-2 gap-6">
               {/* TASKS */}
               <div>
-                {["Today", "Yesterday", "Earlier"].map(group => (
+                {["Today", "Yesterday", "Earlier"].map((group) => (
                   <div key={group} className="mb-4">
                     <h2 className="font-semibold mb-2">{group}</h2>
                     {grouped[group].length === 0 && (
                       <p className="text-gray-400 text-sm">No tasks</p>
                     )}
-                    {grouped[group].map(task => (
+                    {grouped[group].map((task) => (
                       <div
                         key={task._id}
                         className="flex justify-between bg-gray-50 p-3 rounded mb-2"
@@ -224,11 +238,14 @@ export default function Completed() {
                         <span>{task.title}</span>
                         <span className="text-gray-400 text-sm">
                           {task.dueDate
-                            ? new Date(task.dueDate).toLocaleDateString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })
+                            ? new Date(task.dueDate).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                },
+                              )
                             : "No Date"}
                         </span>
                       </div>
@@ -251,10 +268,22 @@ export default function Completed() {
 
                   <ul className="space-y-2 text-gray-600">
                     {[
-                      { label: "Completed Today", value: grouped.Today.length, icon: "✅" },
-                      { label: "This Week", value: completedTasks.length, icon: "📅" },
+                      {
+                        label: "Completed Today",
+                        value: grouped.Today.length,
+                        icon: "✅",
+                      },
+                      {
+                        label: "This Week",
+                        value: completedTasks.length,
+                        icon: "📅",
+                      },
                       { label: "Best Day", value: bestDay, icon: "🏆" },
-                      { label: "Current Streak", value: `${currentStreak} days`, icon: "🔥" },
+                      {
+                        label: "Current Streak",
+                        value: `${currentStreak} days`,
+                        icon: "🔥",
+                      },
                     ].map((item, i) => (
                       <li
                         key={i}
@@ -265,7 +294,9 @@ export default function Completed() {
             hover:bg-white hover:shadow-sm
           "
                       >
-                        <span>{item.icon} {item.label}</span>
+                        <span>
+                          {item.icon} {item.label}
+                        </span>
                         <span className="font-medium">{item.value}</span>
                       </li>
                     ))}
@@ -285,20 +316,27 @@ export default function Completed() {
                   <ul className="space-y-2">
                     {[
                       { label: "🥇 First Task", unlocked: achievements.first },
-                      { label: "🔥 7-day Streak", unlocked: achievements.streak7 },
+                      {
+                        label: "🔥 7-day Streak",
+                        unlocked: achievements.streak7,
+                      },
                       { label: "✅ 25 Tasks", unlocked: achievements.done25 },
                       { label: "🔒 100 Tasks", unlocked: achievements.done100 },
-                      { label: "🔥 50-day Streak", unlocked: achievements.streak50 },
+                      {
+                        label: "🔥 50-day Streak",
+                        unlocked: achievements.streak50,
+                      },
                     ].map((item, i) => (
                       <li
                         key={i}
                         className={`
             px-2 py-1 rounded-md
             transition-all duration-300
-            ${item.unlocked
-                            ? "text-black font-medium animate-pop hover:bg-green-50"
-                            : "text-gray-400"
-                          }
+            ${
+              item.unlocked
+                ? "text-black font-medium animate-pop hover:bg-green-50"
+                : "text-gray-400"
+            }
           `}
                       >
                         {item.label}
@@ -307,9 +345,7 @@ export default function Completed() {
                   </ul>
                 </div>
               </div>
-
             </div>
-
           </div>
         </div>
       </div>

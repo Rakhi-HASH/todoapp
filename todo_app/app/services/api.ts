@@ -2,9 +2,9 @@ import axios from "axios";
 
 const API_BASE = "http://localhost:5000/api";
 
-/* =========================
-   AXIOS INSTANCE
-========================= */
+
+// AXIOS INSTANCE
+
 const api = axios.create({
   baseURL: API_BASE,
   headers: {
@@ -12,9 +12,9 @@ const api = axios.create({
   },
 });
 
-/* =========================
-   AUTH TOKEN HANDLER
-========================= */
+
+// AUTH TOKEN HANDLER
+
 export const setAuthToken = (token: string | null) => {
   if (token) {
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -23,134 +23,91 @@ export const setAuthToken = (token: string | null) => {
   }
 };
 
-/* =========================
-   LOGIN
-========================= */
-// export const loginUser = async (email: string, password: string) => {
-//   try {
-//     const res = await api.post("/auth/login", { email, password });
 
-//     const { token, user } = res.data;
+//REGISTER
 
-//     // ✅ store token + user
-//     localStorage.setItem("token", token);
-//     localStorage.setItem("user", JSON.stringify(user));
-
-//     // ✅ set token for future requests
-//     setAuthToken(token);
-
-//     return user;
-//   } catch (error: any) {
-//     throw new Error(
-//       error.response?.data?.message || "Login failed"
-//     );
-//   }
-// };
-
-
-
-// export const loginUser = async (email: string, password: string) => {
-//   try {
-//     const res = await api.post("/auth/login", { email, password });
-
-//     const token = res.data.token;
-
-//     if (!token) {
-//       throw new Error("Token not received from server");
-//     }
-
-//     // ✅ Save token
-//     localStorage.setItem("token", token);
-//     setAuthToken(token);
-
-//     // ✅ Try to get user (if backend sends it)
-//     const user =
-//       res.data.user ||
-//       {
-//         email,        // fallback
-//         name: "User", // fallback
-//       };
-
-//     localStorage.setItem("user", JSON.stringify(user));
-
-//     return user;
-//   } catch (error: any) {
-//     throw new Error(
-//       error.response?.data?.message || "Login failed"
-//     );
-//   }
-// };
-
-export const loginUser = async (email: string, password: string) => {
-  try {
-    const res = await api.post("/auth/login", { email, password });
-
-    console.log("LOGIN RESPONSE 👉", res.data);
-
-    // ✅ Normalize response
-    const token =
-      res.data.token || res.data.data?.token;
-
-    const user =
-      res.data.user ||
-      res.data.data?.user || {
-        name: res.data.name,
-        email: res.data.email,
-      };
-
-    if (!token) {
-      throw new Error("Token missing from response");
-    }
-
-    // ✅ Save auth
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(user));
-
-    setAuthToken(token);
-
-    return user;
-  } catch (error: any) {
-    console.error("LOGIN ERROR 👉", error.response?.data || error.message);
-
-    throw new Error(
-      error.response?.data?.message ||
-      error.message ||
-      "Login failed"
-    );
-  }
-};
-
-
-
-/* =========================
-   REGISTER
-========================= */
-export const registerUser = async (
-  name: string,
-  email: string,
-  password: string
-) => {
+export const registerUser = async (name: string, email: string) => {
   try {
     const res = await api.post("/auth/register", {
       name,
       email,
-      password,
     });
-
-    // ❗ DO NOT auto-login here
-    // After register → redirect to login page
 
     return res.data;
   } catch (error: any) {
+    console.error("REGISTER ERROR 👉", error);
     throw new Error(
       error.response?.data?.message || "Registration failed"
     );
   }
 };
 
-/* =========================
-   TASKS
-========================= */
+
+//LOGIN (SEND OTP ONLY)
+
+export const loginUser = async (email: string) => {
+  try {
+    const res = await api.post("/auth/login", { email });
+
+    return res.data; // only message like "OTP sent"
+  } catch (error: any) {
+    console.error("LOGIN ERROR 👉", error);
+    throw new Error(
+      error.response?.data?.message || "OTP sending failed"
+    );
+  }
+};
+
+
+//  VERIFY OTP
+
+export const verifyOtp = async (email: string, otp: string) => {
+  try {
+    const res = await api.post("/auth/verify-otp", {
+      email,
+      otp,
+    });
+
+    const { token, _id, name } = res.data;
+
+    if (!token) {
+      throw new Error("Token not received from server");
+    }
+
+    const user = {
+      _id,
+      name,
+      email,
+    };
+
+    // Save auth
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+
+    setAuthToken(token);
+
+    return user;
+
+  } catch (error: any) {
+    console.log("FULL OTP ERROR 👉", error);
+
+    // If backend sent a message
+    if (error.response && error.response.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+
+    // Axios/network error fallback
+    if (error.message) {
+      throw new Error(error.message);
+    }
+
+    throw new Error("OTP verification failed");
+  }
+};
+
+
+//TASKS (PROTECTED)
+
 
 // GET ALL TASKS
 export const getTasks = async () => {
@@ -163,6 +120,7 @@ export const getTasks = async () => {
     );
   }
 };
+
 
 // CREATE TASK
 export const addTask = async (
@@ -185,6 +143,7 @@ export const addTask = async (
   }
 };
 
+
 // UPDATE TASK
 export const updateTask = async (id: string, updates: any) => {
   try {
@@ -196,6 +155,7 @@ export const updateTask = async (id: string, updates: any) => {
     );
   }
 };
+
 
 // DELETE TASK
 export const deleteTask = async (id: string) => {

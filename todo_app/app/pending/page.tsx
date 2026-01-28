@@ -17,6 +17,7 @@ interface Task {
 type FilterType = "all" | "today" | "tomorrow" | "earlier";
 
 export default function Pending() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<FilterType>("all");
@@ -41,8 +42,10 @@ export default function Pending() {
 
   const handleToggleComplete = async (task: Task) => {
     try {
-      const updated = await api.updateTask(task._id, { completed: !task.completed });
-      setTasks(tasks.filter(t => t._id !== updated._id)); // remove from pending
+      const updated = await api.updateTask(task._id, {
+        completed: !task.completed,
+      });
+      setTasks(tasks.filter((t) => t._id !== updated._id)); // remove from pending
     } catch (err: any) {
       alert(err.message || "Failed to update task");
     }
@@ -52,14 +55,13 @@ export default function Pending() {
     if (!confirm("Are you sure you want to delete this task?")) return;
     try {
       await api.deleteTask(task._id);
-      setTasks(tasks.filter(t => t._id !== task._id));
+      setTasks(tasks.filter((t) => t._id !== task._id));
     } catch (err: any) {
       alert(err.message || "Failed to delete task");
     }
   };
 
-
-  // 🔴 Clear all pending tasks
+  // Clear all pending tasks
   const clearAllPending = async () => {
     if (!confirm("Delete ALL pending tasks?")) return;
 
@@ -73,7 +75,7 @@ export default function Pending() {
     }
   };
 
-  // 🔴 Clear overdue tasks
+  // Clear overdue tasks
   const clearOverdueTasks = async () => {
     if (!confirm("Delete ALL overdue tasks?")) return;
 
@@ -81,7 +83,7 @@ export default function Pending() {
       const todayDate = new Date();
       todayDate.setHours(0, 0, 0, 0);
 
-      const overdue = tasks.filter(t => {
+      const overdue = tasks.filter((t) => {
         if (!t.dueDate) return false;
         const d = new Date(t.dueDate);
         d.setHours(0, 0, 0, 0);
@@ -92,13 +94,13 @@ export default function Pending() {
         await api.deleteTask(task._id);
       }
 
-      setTasks(tasks.filter(t => !overdue.some(o => o._id === t._id)));
+      setTasks(tasks.filter((t) => !overdue.some((o) => o._id === t._id)));
     } catch {
       alert("Failed to clear overdue tasks");
     }
   };
 
-  // 🔴 Export pending tasks as CSV
+  // Export pending tasks as CSV
   const exportPendingTasks = () => {
     if (tasks.length === 0) {
       alert("No pending tasks to export");
@@ -107,14 +109,12 @@ export default function Pending() {
 
     const csv = [
       ["Title", "Due Date"],
-      ...tasks.map(t => [
+      ...tasks.map((t) => [
         `"${t.title}"`,
-        t.dueDate
-          ? new Date(t.dueDate).toLocaleDateString("en-IN")
-          : "No Date",
+        t.dueDate ? new Date(t.dueDate).toLocaleDateString("en-IN") : "No Date",
       ]),
     ]
-      .map(row => row.join(","))
+      .map((row) => row.join(","))
       .join("\n");
 
     const blob = new Blob([csv], { type: "text/csv" });
@@ -128,11 +128,10 @@ export default function Pending() {
     URL.revokeObjectURL(url);
   };
 
-  // 🔴 Reminder (simple UX for now)
+  //  Reminder (simple UX for now)
   const handleReminder = () => {
     alert("⏰ Reminder feature coming soon!");
   };
-
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -142,7 +141,7 @@ export default function Pending() {
   tomorrow.setHours(0, 0, 0, 0);
 
   // Filter tasks based on due date and selected filter
-  const filteredTasks = tasks.filter(task => {
+  const filteredTasks = tasks.filter((task) => {
     if (!task.dueDate) return filter === "all" || filter === "earlier";
     const due = new Date(task.dueDate);
     due.setHours(0, 0, 0, 0);
@@ -166,43 +165,57 @@ export default function Pending() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-100">
-      <Navbar />
-      <div className="flex">
-        <Sidebar />
+    <main className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Navbar with toggle */}
+      <Navbar onSidebarToggle={() => setSidebarOpen(!sidebarOpen)} />
 
-        <div className="flex-1 p-6">
-          <div className="bg-white rounded-lg shadow p-6">
+      <div className="flex flex-1">
+        {/* Sidebar */}
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/40 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+         <div className="flex-1 p-4 sm:p-6 ">
+          <div className="bg-white rounded-lg shadow p-6 ">
             {/* Header */}
             <div className="flex items-center gap-2 mb-1">
               <Clock className="text-gray-700" size={20} />
               <h1 className="text-lg font-semibold">Pending</h1>
             </div>
             <p className="text-gray-500 mb-4">
-              You have <span className="font-medium">{tasks.length}</span> pending tasks
+              You have <span className="font-medium">{tasks.length}</span>{" "}
+              pending tasks
             </p>
 
             {/* Filters */}
             <div className="flex gap-2 mb-6">
-              {(["all", "today", "tomorrow", "earlier"] as FilterType[]).map(f => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`
+              {(["all", "today", "tomorrow", "earlier"] as FilterType[]).map(
+                (f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`
         px-3 py-1 rounded text-sm border
         transition-all duration-200
         transform
-        ${filter === f
-                      ? "bg-blue-600 text-white border-blue-600 shadow-md scale-105"
-                      : "bg-gray-200 text-gray-700 border-gray-200 hover:bg-gray-300 hover:scale-105"
-                    }
+        ${
+          filter === f
+            ? "bg-blue-600 text-white border-blue-600 shadow-md scale-105"
+            : "bg-gray-200 text-gray-700 border-gray-200 hover:bg-gray-300 hover:scale-105"
+        }
       `}
-                >
-                  {f.charAt(0).toUpperCase() + f.slice(1)}
-                </button>
-              ))}
+                  >
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ),
+              )}
             </div>
-
 
             {/* Tasks */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -212,7 +225,7 @@ export default function Pending() {
                 ) : filteredTasks.length === 0 ? (
                   <p className="text-gray-500 text-center ">No tasks found.</p>
                 ) : (
-                  filteredTasks.map(task => (
+                  filteredTasks.map((task) => (
                     <TaskItem
                       key={task._id}
                       title={task.title}
@@ -225,26 +238,34 @@ export default function Pending() {
               </div>
 
               {/* Right Side */}
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {/* Productivity Tip */}
-                <div className="bg-gray-50 p-4 rounded shadow-sm 
-                  transition-transform duration-300 hover:scale-105 hover:shadow-md">
-                  <h3 className="font-semibold mb-2 text-gray-800">Productivity Tip ⚡</h3>
-                  <p className="text-sm text-gray-600">
+                <div
+                  className="bg-gray-50 p-7 rounded shadow-sm 
+                  transition-transform duration-300 hover:scale-105 hover:shadow-md"
+                >
+                  <h3 className="font-semibold mb-2 text-gray-800">
+                    Productivity Tip ⚡
+                  </h3>
+                  <p className="text-m text-gray-600">
                     Break Tasks into smaller steps to make them easier to tackle
                     and less overwhelming.
                   </p>
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="text-ss text-gray-400 mt-2">
                     ⭐ Use 3.3.3 rule of productivity
                   </p>
                 </div>
 
                 {/* Quick Actions */}
-                <div className="bg-gray-50 p-4 rounded shadow-sm 
-                  transition-transform duration-300 hover:scale-105 hover:shadow-md">
-                  <h3 className="font-semibold mb-3 text-gray-800">Quick Actions</h3>
+                <div
+                  className="bg-gray-50 p-7 rounded shadow-sm 
+                  transition-transform duration-300 hover:scale-105 hover:shadow-md"
+                >
+                  <h3 className="font-semibold mb-3 text-gray-800">
+                    Quick Actions
+                  </h3>
 
-                  <ul className="text-sm text-gray-600 space-y-2">
+                  <ul className="text-m text-gray-600 space-y-2">
                     <li
                       onClick={clearAllPending}
                       className="cursor-pointer transition-colors duration-200 hover:text-red-500 hover:underline"
@@ -267,12 +288,12 @@ export default function Pending() {
                     </li>
                   </ul>
 
-                  <p className="mt-2 text-sm text-blue-600 italic transition-transform duration-300 hover:scale-105">
-                    🏆 Success is the sum of small efforts repeated day in and day out.
+                  <p className="mt-2 text-m text-blue-600 italic transition-transform duration-300 hover:scale-105">
+                    🏆 Success is the sum of small efforts repeated day in and
+                    day out.
                   </p>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
@@ -292,17 +313,22 @@ function TaskItem({ title, dueText, onToggle, onDelete }: TaskItemProps) {
   return (
     <div className="flex justify-between items-center bg-gray-50 p-3 rounded mb-2">
       <div className="flex items-center gap-2">
-        <input type="checkbox" className="accent-blue-600" onChange={onToggle} />
+        <input
+          type="checkbox"
+          className="accent-blue-600"
+          onChange={onToggle}
+        />
         <span className="text-sm">{title}</span>
       </div>
 
       <div className="flex items-center gap-3">
         {dueText && (
-          <span className={`text-xs ${dueText.includes("Overdue") || dueText.includes("⚠️") ? "text-red-500" : "text-gray-400"}`}>
+          <span
+            className={`text-xs ${dueText.includes("Overdue") || dueText.includes("⚠️") ? "text-red-500" : "text-gray-400"}`}
+          >
             {dueText}
           </span>
         )}
-
       </div>
     </div>
   );

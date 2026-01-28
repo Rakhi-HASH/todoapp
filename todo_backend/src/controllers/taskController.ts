@@ -5,7 +5,7 @@ import { AuthRequest } from "../middleware/authMiddleware";
 // Define body type
 interface CreateTaskBody {
   title: string;
-  dueDate?: string;  // dueDate is optional
+  dueDate?: string;  
   completed?: boolean;
 }
 
@@ -16,7 +16,7 @@ export const createTask = async (req: any, res: Response) => {
       title: req.body.title,
       completed: req.body.completed ?? false,
 
-      // 🔥 DO NOT convert to Date
+      //  DO NOT convert to Date
       dueDate: req.body.dueDate || "",
 
       user: req.user.id,

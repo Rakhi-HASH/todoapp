@@ -1,100 +1,140 @@
 import { Request, Response } from "express";
 import User from "../models/User";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import Otp from "../models/Otp";
+import { generateOTP } from "../utils/generateOtp";
+import { sendOTPEmail } from "../utils/sendEmail";
 
-const generateToken = (id: string) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET as string, {
-    expiresIn: "7d",
-  });
-};
 
-// REGISTER
+// ======================
+// REGISTER (name + email)
+// ======================
 export const registerUser = async (req: Request, res: Response) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields required" });
+    if (!name || !email) {
+      return res.status(400).json({ message: "Name and email required" });
     }
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
+    const normalizedEmail = email.toLowerCase();
+
+    const exists = await User.findOne({ email: normalizedEmail });
+
+    if (exists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const user = await User.create({
       name,
-      email,
-      password: hashedPassword,
+      email: normalizedEmail,
     });
 
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      token: generateToken(user._id.toString()),
+    return res.status(201).json({
+      message: "Registered successfully",
+      user,
     });
+
   } catch (error) {
-    res.status(500).json({ message: "Register failed" });
+    console.error("REGISTER ERROR:", error);
+    return res.status(500).json({ message: "Register failed" });
   }
 };
 
-// LOGIN
+
+
+
+// ======================
+// LOGIN (email → send OTP)
+// ======================
 export const loginUser = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email } = req.body;
 
-    const user = await User.findOne({ email });
+    if (!email) {
+      return res.status(400).json({ message: "Email required" });
+    }
+
+    const normalizedEmail = email.toLowerCase();
+
+    const user = await User.findOne({ email: normalizedEmail });
+
     if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({ message: "User not registered" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    const otp = generateOTP(); // string or number
 
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      token: generateToken(user._id.toString()),
+    // remove old OTPs
+    await Otp.deleteMany({ email: normalizedEmail });
+
+    // save new OTP
+    await Otp.create({
+      email: normalizedEmail,
+      otp: String(otp), // store as string
+      expiresAt: new Date(Date.now() + 1 * 60 * 1000), // 1 min
     });
+
+    // attempt to send email
+    try {
+      await sendOTPEmail(normalizedEmail, String(otp));
+    } catch (emailError: any) {
+      console.warn(
+        `Failed to send OTP email to ${normalizedEmail}. OTP will still work.`
+      );
+      console.warn(`Fallback OTP (for testing/dev): ${otp}`);
+    }
+
+    // always respond success, so frontend can navigate
+    return res.json({
+      message: "OTP generated successfully. Check email (or console in dev).",
+    });
+
   } catch (error) {
-    res.status(500).json({ message: "Login failed" });
+    console.error("OTP SEND ERROR:", error);
+    return res.status(500).json({ message: "OTP generation failed" });
   }
 };
 
 
-// authController.js (example)
+// ======================
+// VERIFY OTP
+// ======================
+export const verifyOtp = async (req: Request, res: Response) => {
+  try {
+    const { email, otp } = req.body;
 
-// exports.login = async (req, res) => {
-//   const { email, password } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP required" });
+    }
 
-//   const user = await User.findOne({ email });
-//   if (!user) {
-//     return res.status(400).json({ message: "User not found" });
-//   }
+    const normalizedEmail = email.toLowerCase();
 
-//   const isMatch = await user.comparePassword(password);
-//   if (!isMatch) {
-//     return res.status(400).json({ message: "Invalid credentials" });
-//   }
+    const otpRecord = await Otp.findOne({ email: normalizedEmail });
 
-//   const token = jwt.sign(
-//     { id: user._id },
-//     process.env.JWT_SECRET,
-//     { expiresIn: "7d" }
-//   );
+    if (!otpRecord) {
+      return res.status(400).json({ message: "OTP not found" });
+    }
 
-//   res.json({
-//     token,
-//     user: {
-//       name: user.name,
-//       email: user.email,
-//     },
-//   });
-// };
+    // check expiration
+    if (otpRecord.expiresAt < new Date()) {
+      await Otp.deleteOne({ email: normalizedEmail });
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    // compare OTP
+    if (otpRecord.otp !== String(otp)) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    // OTP success → delete
+    await Otp.deleteOne({ email: normalizedEmail });
+
+    return res.json({
+      message: "OTP verified successfully",
+    });
+
+  } catch (error) {
+    console.error("OTP VERIFY ERROR:", error);
+    return res.status(500).json({ message: "OTP verification failed" });
+  }
+};

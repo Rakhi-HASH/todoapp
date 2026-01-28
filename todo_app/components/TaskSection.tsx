@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import * as api from "../app/services/api";
 
-
 import { FiTrash2 } from "react-icons/fi";
 
 interface Task {
@@ -16,6 +15,13 @@ interface Task {
 type FilterType = "all" | "active" | "completed";
 type UpcomingFilterType = "all" | "today" | "tomorrow";
 
+function parseLocalDate(dateStr: string) {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  
+2
 export default function TaskSection() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTitle, setNewTitle] = useState("");
@@ -23,9 +29,12 @@ export default function TaskSection() {
   const [loading, setLoading] = useState(false);
 
   const [filter, setFilter] = useState<FilterType>("all");
+  const tasksLeft = tasks.filter((t) => !t.completed).length;
+  const tasksCompleted = tasks.filter((t) => t.completed).length;
 
-  // ✅ Upcoming filter state
-  const [upcomingFilter, setUpcomingFilter] = useState<UpcomingFilterType>("all");
+  //  Upcoming filter state
+  const [upcomingFilter, setUpcomingFilter] =
+    useState<UpcomingFilterType>("all");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -80,7 +89,7 @@ export default function TaskSection() {
         completed: !task.completed,
       });
 
-      setTasks(tasks.map(t => (t._id === updated._id ? updated : t)));
+      setTasks(tasks.map((t) => (t._id === updated._id ? updated : t)));
     } catch (err: any) {
       alert(err.message || "Failed to update task");
     }
@@ -95,14 +104,14 @@ export default function TaskSection() {
       api.setAuthToken(token);
 
       await api.deleteTask(task._id);
-      setTasks(tasks.filter(t => t._id !== task._id));
+      setTasks(tasks.filter((t) => t._id !== task._id));
     } catch (err: any) {
       alert(err.message || "Failed to delete task");
     }
   };
 
-  // ✅ Task filters
-  const filteredTasks = tasks.filter(task => {
+  // Task filters
+  const filteredTasks = tasks.filter((task) => {
     if (filter === "active") return !task.completed;
     if (filter === "completed") return task.completed;
     return true;
@@ -116,26 +125,28 @@ export default function TaskSection() {
 
   // ✅ Upcoming tasks sorted
   const upcomingTasks = tasks
-    .filter(task => {
+    .filter((task) => {
       if (!task.dueDate) return false;
       if (task.completed) return false;
 
-      const due = new Date(task.dueDate);
+      const due = parseLocalDate(task.dueDate)
+;
       due.setHours(0, 0, 0, 0);
 
       // Upcoming filter
       if (upcomingFilter === "today") return due.getTime() === today.getTime();
-      if (upcomingFilter === "tomorrow") return due.getTime() === tomorrow.getTime();
+      if (upcomingFilter === "tomorrow")
+        return due.getTime() === tomorrow.getTime();
 
       return due >= today; // all upcoming
     })
     .sort(
-      (a, b) =>
-        new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime()
+      (a, b) => parseLocalDate(a.dueDate!).getTime() - parseLocalDate(b.dueDate!).getTime(),
     );
 
   function formatUpcomingDate(dateStr: string) {
-    const date = new Date(dateStr);
+    const date = parseLocalDate(dateStr);
+
 
     if (date.toDateString() === today.toDateString()) return "Today";
     if (date.toDateString() === tomorrow.toDateString()) return "Tomorrow";
@@ -147,13 +158,13 @@ export default function TaskSection() {
     });
   }
 
-  const tasksLeft = tasks.filter(t => !t.completed).length;
-  const tasksCompleted = tasks.filter(t => t.completed).length;
+  
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ">
       {/* Left: Task List */}
-      <div className="bg-white p-6 rounded-xl shadow-sm 
+      <div
+        className="bg-white p-6 rounded-xl shadow-sm 
   transition-all duration-300 ease-out
   hover:shadow-xl hover:-translate-y-1
   animate-fadeIn"
@@ -221,10 +232,11 @@ export default function TaskSection() {
               className={`px-3 py-1 rounded-full text-sm border
           transition-all duration-300 ease-out
           hover:scale-105
-          ${filter === f
-                  ? "bg-blue-500 text-white border-blue-500 shadow-md"
-                  : "text-gray-500 border-gray-300 hover:bg-gray-100"
-                }`}
+          ${
+            filter === f
+              ? "bg-blue-500 text-white border-blue-500 shadow-md"
+              : "text-gray-500 border-gray-300 hover:bg-gray-100"
+          }`}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
@@ -233,9 +245,7 @@ export default function TaskSection() {
 
         {/* Task List */}
         {loading ? (
-          <p className="text-center text-gray-500 animate-pulse">
-            Loading...
-          </p>
+          <p className="text-center text-gray-500 animate-pulse">Loading...</p>
         ) : filteredTasks.length === 0 ? (
           <p className="text-gray-500 text-center mb-8 animate-fadeIn">
             No tasks found.
@@ -258,7 +268,6 @@ export default function TaskSection() {
         </p>
       </div>
 
-
       {/* Right: Upcoming */}
       <div
         className="bg-white p-5 rounded-xl shadow-sm
@@ -279,10 +288,11 @@ export default function TaskSection() {
               className={`px-3 py-1 rounded-full text-sm border
           transition-all duration-300 ease-out
           hover:scale-105
-          ${upcomingFilter === f
-                  ? "bg-blue-500 text-white border-blue-500 shadow-md"
-                  : "text-gray-500 border-gray-300 hover:bg-gray-100"
-                }`}
+          ${
+            upcomingFilter === f
+              ? "bg-blue-500 text-white border-blue-500 shadow-md"
+              : "text-gray-500 border-gray-300 hover:bg-gray-100"
+          }`}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
@@ -316,9 +326,6 @@ export default function TaskSection() {
           </div>
         )}
       </div>
-
-
-      
     </div>
   );
 }
@@ -336,7 +343,8 @@ function TaskItem({
   let dueText = "";
 
   if (task.dueDate) {
-    const dueDateObj = new Date(task.dueDate);
+    const dueDateObj = parseLocalDate(task.dueDate);
+
     const today = new Date();
 
     dueText = `Due: ${dueDateObj.toLocaleDateString()}`;
@@ -356,8 +364,9 @@ function TaskItem({
           className="accent-green-700 cursor-pointer"
         />
         <span
-          className={`text-sm ${task.completed ? "line-through text-gray-400" : "text-black"
-            }`}
+          className={`text-sm ${
+            task.completed ? "line-through text-gray-400" : "text-black"
+          }`}
         >
           {task.title}
         </span>
