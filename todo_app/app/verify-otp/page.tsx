@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { verifyOtp } from "../services/api";
 
-export default function VerifyOtpPage() {
+function VerifyOtpContent() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,7 +23,7 @@ export default function VerifyOtpPage() {
     try {
       await verifyOtp(email, otp);
       alert("Login successful!");
-      router.push("/"); 
+      router.push("/");
     } catch (err: any) {
       setError(err?.response?.data?.message || "OTP verification failed");
     } finally {
@@ -71,5 +71,13 @@ export default function VerifyOtpPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function VerifyOtpPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
+      <VerifyOtpContent />
+    </Suspense>
   );
 }
