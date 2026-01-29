@@ -12,7 +12,7 @@ export default function AboutPage() {
       <Navbar onSidebarToggle={() => setSidebarOpen(!sidebarOpen)} />
 
       <div className="flex flex-1">
-        {/* Sidebar */}
+     
         {/* Sidebar (mobile only) */}
         <div className="md:hidden">
           <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -48,7 +48,7 @@ export default function AboutPage() {
                 />
               </div>
 
-              {/* Right Text Content */}
+              
               {/* Right Text Content */}
               <div className="text-gray-700">
                 <h3 className="font-semibold mb-2">

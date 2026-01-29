@@ -51,7 +51,7 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Name */}
+          
           {/* Name */}
           <div>
             <input
