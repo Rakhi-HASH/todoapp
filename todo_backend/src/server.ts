@@ -12,7 +12,10 @@ connectDB();
 const app = express();
 
 app.use(cors({
-  origin: "https://todoapp-ten-ecru.vercel.app/",
+  origin: [
+    "http://localhost:3000",
+    "https://todoapp-ten-ecru.vercel.app"
+  ],
   credentials: true,
 }));
 
