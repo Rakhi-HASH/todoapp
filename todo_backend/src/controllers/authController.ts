@@ -8,6 +8,38 @@ import { sendOTPEmail } from "../utils/sendEmail";
 // ======================
 // REGISTER (name + email)
 // ======================
+// export const registerUser = async (req: Request, res: Response) => {
+//   try {
+//     const { name, email } = req.body;
+
+//     if (!name || !email) {
+//       return res.status(400).json({ message: "Name and email required" });
+//     }
+
+//     const normalizedEmail = email.toLowerCase();
+
+//     const exists = await User.findOne({ email: normalizedEmail });
+
+//     if (exists) {
+//       return res.status(400).json({ message: "User already exists" });
+//     }
+
+//     const user = await User.create({
+//       name,
+//       email: normalizedEmail,
+//     });
+
+//     return res.status(201).json({
+//       message: "Registered successfully",
+//       user,
+//     });
+
+//   } catch (error) {
+//     console.error("REGISTER ERROR:", error);
+//     return res.status(500).json({ message: "Register failed" });
+//   }
+// };
+
 export const registerUser = async (req: Request, res: Response) => {
   try {
     const { name, email } = req.body;
@@ -19,7 +51,6 @@ export const registerUser = async (req: Request, res: Response) => {
     const normalizedEmail = email.toLowerCase();
 
     const exists = await User.findOne({ email: normalizedEmail });
-
     if (exists) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -29,17 +60,20 @@ export const registerUser = async (req: Request, res: Response) => {
       email: normalizedEmail,
     });
 
+    // ✅ send plain JSON with only necessary fields
     return res.status(201).json({
       message: "Registered successfully",
-      user,
+      user: {
+        _id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+      },
     });
-
   } catch (error) {
     console.error("REGISTER ERROR:", error);
     return res.status(500).json({ message: "Register failed" });
   }
 };
-
 
 
 

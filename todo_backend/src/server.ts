@@ -1,3 +1,4 @@
+import path from "path";
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -5,6 +6,12 @@ import connectDB from "./config/db";
 
 import authRoutes from "./routes/authRoutes";
 import taskRoutes from "./routes/taskRoutes";
+
+// 🔹 Load .env from root folder reliably
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
+
+
 
 dotenv.config();
 connectDB();
@@ -18,7 +25,9 @@ app.use(cors({
     "https://todoapp-ten-ecru.vercel.app"
   ],
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
 }));
+
 
 
 app.use(express.json());

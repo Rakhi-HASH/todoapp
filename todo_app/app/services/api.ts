@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_BASE = "https://todoapp-12-pc6f.onrender.com/api";
+// const API_BASE = "https://todoapp-12-pc6f.onrender.com";
+const API_BASE="http://localhost:5000/api";
 
 
 // AXIOS INSTANCE
